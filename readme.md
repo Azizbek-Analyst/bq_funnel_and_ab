@@ -306,23 +306,3 @@ bq.compare_funnels(
 ## Лицензия
 
 MIT
-
-## Manual calculations:
-
-To get Query from a file you should use 
-    
-get_query(file_name , query)
-  exp:  query_1 = sr.get_query('ab_addons.txt','QUERY_1')
-
-The file with query should be splited by two dash and name like -- QUERY_1
-  exp:  
-        -- QUERY_1
-        SELECT * 
-        from t1 
-
-
-To calculate metric by Bayesian you can use: 
-    bayesian_test(test_n, test_exp, control_n, control_exp)
-    where : 
-        _n: total number of users in group (users in quote page)
-        _exp: number of key action (users who made purchase) 

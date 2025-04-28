@@ -20,8 +20,8 @@ pip install bq-funnel
 ```
 Или установить из репозитория:
 ```bash
-git clone https://github.com/your-org/pm-analytics.git
-cd pm-analytics/common
+git clone https://github.com/Azizbek-Analyst/bq_funnel_and_ab.git
+cd pm-bq_funnel_and_ab/
 pip install -e bq_funnel
 ```
 

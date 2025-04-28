@@ -21,8 +21,9 @@ pip install bq-funnel
 Или установить из репозитория:
 ```bash
 git clone https://github.com/Azizbek-Analyst/bq_funnel_and_ab.git
-cd pm-bq_funnel_and_ab/
-pip install -e bq_funnel
+cd bq_funnel_and_ab
+
+
 ```
 
 Для интерактивной аутентификации через браузер также установите:

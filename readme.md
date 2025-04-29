@@ -22,6 +22,7 @@ pip install bq-funnel
 ```bash
 git clone https://github.com/Azizbek-Analyst/bq_funnel_and_ab.git
 cd bq_funnel_and_ab
+pip install -e bq-funnel
 
 
 ```

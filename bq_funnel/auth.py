@@ -130,3 +130,23 @@ def authenticate_with_service_account(credentials_path, project_id=None):
         Авторизованный клиент BigQuery
     """
     return setup_bigquery_client(credentials_path=credentials_path, project_id=project_id)
+
+def check_connection(client: bigquery.Client) -> bool:
+    """
+    Проверяет соединение с BigQuery, выполняя простой запрос.
+    
+    Args:
+        client: Клиент BigQuery
+        
+    Returns:
+        True, если соединение установлено успешно, иначе False
+    """
+    try:
+        # Выполнение простого запроса для проверки соединения
+        query = "SELECT 1"
+        query_job = client.query(query)
+        result = list(query_job.result())
+        return len(result) > 0
+    except Exception as e:
+        print(f"Ошибка соединения с BigQuery: {str(e)}")
+        return False

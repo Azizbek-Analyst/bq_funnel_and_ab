@@ -11,7 +11,7 @@ setup(
     description="Библиотека для анализа воронок пользователей в BigQuery",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/bq_funnel",
+    url="https://github.com/Azizbek-Analyst/bq_funnel_and_ab",
     packages=find_packages(),
       classifiers=[
         "Development Status :: 3 - Alpha",

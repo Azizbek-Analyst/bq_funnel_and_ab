@@ -22,10 +22,28 @@ pip install bq-funnel
 ```bash
 git clone https://github.com/Azizbek-Analyst/bq_funnel_and_ab.git
 cd bq_funnel_and_ab
-pip install -e bq-funnel
-
-
+pip install -e .
 ```
+
+Если вы хотите установить только необходимые зависимости:
+```bash
+pip install -r requirements.txt
+```
+
+### Быстрая установка с помощью скриптов
+
+Для Linux/Mac:
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+Для Windows (запустите от имени администратора):
+```
+install.bat
+```
+
+Эти скрипты создадут виртуальную среду Python и установят библиотеку автоматически.
 
 Для интерактивной аутентификации через браузер также установите:
 ```bash

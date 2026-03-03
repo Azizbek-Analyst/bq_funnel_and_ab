@@ -1,120 +1,120 @@
 # BigQuery Funnel
 
-Библиотека для анализа воронок пользователей в Google BigQuery.
+Library for analyzing user funnels in Google BigQuery.
 
-## Основные возможности
+## Key Features
 
-- Построение SQL-запросов для анализа воронок пользователей в BigQuery
-- Добавление параметров для каждого события воронки
-- Группировка результатов по различным параметрам (например, A/B-тестам)
-- Расчет коэффициентов конверсии между шагами воронки
-- Анализ оттока пользователей и определение критических точек
-- Статистический анализ A/B-тестов
-- Визуализация воронок и сравнение разных групп
-- **Выполнение произвольных SQL-запросов с параметрами**
+- Building SQL queries to analyze user funnels in BigQuery
+- Adding parameters for each funnel event
+- Grouping results according to various parameters (for example, A/B-tests)
+- Calculating conversion rates between funnel steps
+- Analysis of user churn and identification of critical points
+- Statistical analysis A/B-tests
+- Funnel visualization and comparison of different groups
+- **Executing arbitrary SQL queries with parameters**
 
-## Установка
+## Installation
 
 ```bash
 pip install bq-funnel
 ```
-Или установить из репозитория:
+Or install from the repository:
 ```bash
 git clone https://github.com/Azizbek-Analyst/bq_funnel_and_ab.git
 cd bq_funnel_and_ab
 pip install -e .
 ```
 
-Если вы хотите установить только необходимые зависимости:
+If you want to install only the required dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-### Быстрая установка с помощью скриптов
+### Quick installation using scripts
 
-Для Linux/Mac:
+For Linux/Mac:
 ```bash
 chmod +x install.sh
 ./install.sh
 ```
 
-Для Windows (запустите от имени администратора):
+For Windows (run as administrator):
 ```
 install.bat
 ```
 
-Эти скрипты создадут виртуальную среду Python и установят библиотеку автоматически.
+These scripts will create a Python virtual environment and install the library automatically.
 
-Для интерактивной аутентификации через браузер также установите:
+For interactive authentication via browser, also set:
 ```bash
 pip install pydata-google-auth
 ```
 
-## Требования
+## Requirements
 
 - Python 3.6+
 - google-cloud-bigquery>=2.0.0
 - pandas>=1.0.0
 - numpy>=1.18.0
-- matplotlib>=3.2.0 (для визуализации)
-- seaborn>=0.10.0 (для визуализации)
-- scipy>=1.4.0 (для статистического анализа)
-- pydata-google-auth (опционально, для интерактивной аутентификации)
+- matplotlib>=3.2.0 (for visualization)
+- seaborn>=0.10.0 (for visualization)
+- scipy>=1.4.0 (for statistical analysis)
+- pydata-google-auth (optional, for interactive authentication)
 
-## Структура проекта
+## Project structure
 ```
 bq_funnel/
 ├── __init__.py
-├── auth.py                # Аутентификация в BigQuery
-├── core.py                # Основной класс BigQueryFunnel
-├── query_builder.py       # Построение SQL-запросов для стандартных таблиц
-├── query_builder_ga4.py   # Построение SQL-запросов для таблиц GA4
-├── setup.py               # Настройка установки пакета
+├── auth.py                # Authentication in BigQuery
+├── core.py                # BigQueryFunnel main class
+├── query_builder.py       # Building SQL queries for standard tables
+├── query_builder_ga4.py   # Building SQL queries for GA4 tables
+├── setup.py               # Configuring package installation
 ├── analysis/
 │   ├── __init__.py
-│   ├── ab_test.py         # Анализ A/B-тестов
-│   ├── conversion.py      # Расчет конверсии
-│   └── dropoff.py         # Анализ отказов
+│   ├── ab_test.py         # A/B test analysis
+│   ├── conversion.py      # Conversion calculation
+│   └── dropoff.py         # Failure Analysis
 └── visualization/
-    ├── funnel_plot.py     # Визуализация воронок
-    └── comparison_plot.py # Сравнение воронок
+    ├── funnel_plot.py     # Funnel visualization
+    └── comparison_plot.py # Funnel comparison
 ```
 
-## Методы аутентификации в Google Cloud
+## Google Cloud Authentication Methods
 
-Библиотека поддерживает несколько способов аутентификации в Google Cloud:
+The library supports several authentication methods in Google Cloud:
 
-### 1. Интерактивная аутентификация через браузер (pydata_google_auth)
+### 1. Interactive authentication via browser (pydata_google_auth)
 
 ```python
 from bq_funnel import authenticate_via_pydata
 
-# Этот метод запустит интерактивную аутентификацию в браузере
+# This method will initiate interactive authentication in the browser
 client = authenticate_via_pydata(project_id="your-project-id")
 
-# Создание экземпляра BigQueryFunnel с аутентифицированным клиентом
+# Creating a BigQueryFunnel instance with an authenticated client
 from bq_funnel import BigQueryFunnel
 bq = BigQueryFunnel(
     project_id=client.project,
     dataset_id="analytics",
     table_id="events",
     data_source="ga4",
-    client=client  # Используем уже аутентифицированный клиент
+    client=client  # We use an already authenticated client
 )
 ```
 
-### 2. Аутентификация через файл ключа сервисного аккаунта
+### 2. Authentication via service account key file
 
 ```python
 from bq_funnel import authenticate_with_service_account
 
 client = authenticate_with_service_account(
     credentials_path="/path/to/your-credentials.json",
-    project_id="your-project-id"  # Необязательно
+    project_id="your-project-id"  # Optional
 )
 ```
 
-### 3. Через переменную окружения `GOOGLE_APPLICATION_CREDENTIALS`
+### 3. Via environment variable `GOOGLE_APPLICATION_CREDENTIALS`
 
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your-credentials.json" # Linux/Mac
@@ -124,38 +124,38 @@ set GOOGLE_APPLICATION_CREDENTIALS=C:\path\to\your-credentials.json # Windows
 ```python
 from bq_funnel import setup_bigquery_client
 
-client = setup_bigquery_client() # Будет использована переменная окружения
+client = setup_bigquery_client() # The environment variable will be used
 ```
 
-### 4. Через метаданные GCP (при запуске внутри GCP)
+### 4. Via GCP metadata (when running inside GCP)
 
 ```python
 from bq_funnel import setup_bigquery_client
 
-client = setup_bigquery_client() # Будет использованы метаданные GCP
+client = setup_bigquery_client() # GCP metadata will be used
 ```
 
-## Примеры использования
+## Examples of use
 
-### Работа с данными Google Analytics 4 (GA4)
+### Working with Google Analytics 4 (GA4) data)
 
 
 ```python
 from bq_funnel import BigQueryFunnel, authenticate_via_pydata
 
-# Интерактивная аутентификация
+# Interactive authentication
 client = authenticate_via_pydata()
 
-# Инициализация BigQueryFunnel с указанием GA4 как источника данных
+# Initializing BigQueryFunnel with GA4 as data source
 bq = BigQueryFunnel(
     project_id=client.project,
-    dataset_id="analytics_12345",  # Набор данных GA4
-    table_id="events_*",          # GA4 часто использует таблицы с подстановочными знаками для дат
+    dataset_id="analytics_12345",  # GA4 Dataset
+    table_id="events_*",          # GA4 often uses wildcard tables for dates
     client=client,
-    data_source="ga4"            # Указываем, что источник данных - GA4
+    data_source="ga4"            # We indicate that the data source is GA4
 )
 
-# Определение воронки для GA4
+# Funnel definition for GA4
 events = [
     'page_view',
     {'name': 'view_item', 'params': {'page_location': '/products/%'}},
@@ -167,30 +167,30 @@ events = [
 date_range = ('2023-01-01', '2023-01-31')
 window = '24h'
 
-# Получение данных воронки
+# Getting Funnel Data
 df = bq.optimized_funnel(
     events=events,
     date_range=date_range,
     window=window,
-    timestamp_field="event_timestamp"  # Поле timestamp в GA4
+    timestamp_field="event_timestamp"  # Timestamp field in GA4
 )
 ```
 
-Примечания по работе с GA4:
-- Используется поле `event_date` для фильтрации по датам вместо преобразования timestamp
-- Применяется `GROUP BY ALL` для агрегирования результатов без группировки
-- Временные метки хранятся в микросекундах с начала эпохи
-- Идентификатор пользователя находится в поле `user_pseudo_id` вместо `user_id`
+Notes on working with GA4:
+- Field used `event_date` to filter by dates instead of timestamp conversion
+- Applies `GROUP BY ALL` to aggregate results without grouping
+- Timestamps are stored in microseconds since the start of the epoch
+- The user ID is in the field `user_pseudo_id` instead of `user_id`
 
-### Простая воронка
+### Simple funnel
 
 ```python
 from bq_funnel import BigQueryFunnel, authenticate_via_pydata
 
-# Интерактивная аутентификация через браузер
+# Interactive authentication via browser
 client = authenticate_via_pydata()
 
-# Инициализация BigQueryFunnel
+# Initializing BigQueryFunnel
 bq = BigQueryFunnel(
     project_id="your-project-id",
     dataset_id="analytics",
@@ -198,7 +198,7 @@ bq = BigQueryFunnel(
     client=client
 )
 
-# Определение параметров воронки
+# Determining funnel parameters
 events = [
     'app_open',
     'search_initiated',
@@ -209,39 +209,39 @@ events = [
 ]
 
 date_range = ('2022-05-01', '2022-05-07')
-window = '24h'  # Временное окно - 24 часа
+window = '24h'  # Time window - 24 hours
 
-# Получение данных воронки
+# Getting Funnel Data
 df = bq.optimized_funnel(
     events=events,
     date_range=date_range,
     window=window
 )
 
-# Расчет коэффициентов конверсии
+# Calculation of conversion rates
 df_with_conv = bq.calculate_conversion_rates(df)
 
 
-# Визуализация воронки
-bq.visualize_funnel(df, title="Воронка покупок")
+# Funnel visualization
+bq.visualize_funnel(df, title="Purchase funnel")
 ```
 
 
 
-### Воронка с параметрами для событий
+### Funnel with parameters for events
 
 ```python
-# Определение параметров воронки с дополнительными параметрами для событий
+# Defining funnel parameters with additional parameters for events
 events = [
-    'login_screen_shown',  # Простое событие как строка
-    {'name': 'login_initiated', 'params': {'page': 'main', 'method': 'email'}},  # Событие с параметрами
+    'login_screen_shown',  # Simple event as a string
+    {'name': 'login_initiated', 'params': {'page': 'main', 'method': 'email'}},  # Event with parameters
     'login_success'
 ]
 
-# Добавление фильтров, применяемых ко всем событиям
+# Add filters that apply to all events
 filters = {'platform': 'iOS'}
 
-# Получение данных воронки
+# Getting Funnel Data
 df = bq.optimized_funnel(
     events=events,
     date_range=date_range,
@@ -249,9 +249,9 @@ df = bq.optimized_funnel(
     filters=filters
 )
 ```
-### Пример 2: Сравнение воронок для разных платформ
+### Example 2: Comparison of funnels for different platforms
 ```python
-# Получение данных для мобильной платформы
+# Receiving data for the mobile platform
 mobile_df = funnel.optimized_funnel(
     events=events,
     date_range=("2024-04-01", "2024-04-30"),
@@ -259,7 +259,7 @@ mobile_df = funnel.optimized_funnel(
     filters={"platform": "mobile"}
 )
 
-# Получение данных для веб-платформы
+# Receiving data for the web platform
 web_df = funnel.optimized_funnel(
     events=events,
     date_range=("2024-04-01", "2024-04-30"),
@@ -267,19 +267,19 @@ web_df = funnel.optimized_funnel(
     filters={"platform": "web"}
 )
 
-# Сравнение воронок
+# Funnel comparison
 funnel.compare_funnels(
     dfs=[mobile_df, web_df],
-    labels=["Мобильная", "Веб"],
-    title="Сравнение воронок по платформам"
+    labels=["Mobile", "Web"],
+    title="Comparison of funnels by platform"
 )
 ```
-### Произвольные SQL-запросы
+### Custom SQL queries
 
-Для выполнения произвольных SQL-запросов к BigQuery вы можете использовать метод `custom_query`:
+To run arbitrary SQL queries against BigQuery you can use the method `custom_query`:
 
 ```python
-# Подготовка SQL-запроса с параметрами
+# Preparing an SQL query with parameters
 query = """
 SELECT
     event_name,
@@ -292,14 +292,14 @@ ORDER BY event_count DESC
 LIMIT 10
 """
 
-# Форматирование запроса с полными именами таблиц
+# Formatting a Query with Fully Qualified Table Names
 formatted_query = query.format(
     project=bq.client.project,
     dataset=bq.dataset_id,
     table=bq.table_id
 )
 
-# Выполнение запроса с параметрами
+# Executing a query with parameters
 result = bq.custom_query(
     query=formatted_query,
     params={
@@ -312,12 +312,12 @@ result = bq.custom_query(
 print(result)
 ```
 
-#### Оценка стоимости запроса (dry_run)
+#### Request cost estimate (dry_run)
 
-Перед выполнением дорогостоящих запросов вы можете оценить их стоимость:
+Before running expensive queries, you can estimate their cost:
 
 ```python
-# Выполнение dry_run для оценки стоимости запроса
+# Running dry_run to estimate the cost of the request
 dry_run_result = bq.custom_query(
     query=formatted_query,
     params={
@@ -328,27 +328,27 @@ dry_run_result = bq.custom_query(
     dry_run=True
 )
 
-# Вывод информации о запросе
+# Displaying request information
 bytes_processed = dry_run_result.total_bytes_processed
 gb_processed = bytes_processed / (1024 ** 3)
 
-print(f"Запрос обработает примерно {bytes_processed:,} байт ({gb_processed:.2f} ГБ)")
-print(f"Приблизительная стоимость запроса: ${gb_processed * 5 / 1000:.6f} (при $5 за ТБ)")
+print(f"The request will process approximately {bytes_processed:,} byte ({gb_processed:.2f} GB)")
+print(f"Approximate cost of request: ${gb_processed * 5 / 1000:.6f} (at $5 for TB)")
 ```
 
 
 
-### Анализ A/B-тестов
+### A/B test analysis
 
 ```python
-# Определение конфигурации A/B-теста
+# Defining Configuration A/B-test
 ab_test_config = {
     'table_id': 'your-project-id.your_dataset.ab_tests_sessions',
-    'test_code': 'TRAVELUAEAQ',  # код теста
-    'user_id_field': 'googleID'  # поле ID пользователя
+    'test_code': 'TRAVELUAEAQ',  # test code
+    'user_id_field': 'googleID'  # user ID field
 }
 
-# Получение данных воронки с разбивкой по A/B-группам
+# Retrieving funnel data broken down by A/B-groups
 funnel_results = funnel.funnel_with_ab_test(
     events=events,
     date_range=("2024-07-01", "2024-08-01"),
@@ -356,11 +356,11 @@ funnel_results = funnel.funnel_with_ab_test(
     window='24h'
 )
 
-# Доступ к результатам для контрольной и тестовой групп
+# Access to results for control and test groups
 control_df = funnel_results['control']
 test_df = funnel_results['test']
 
-# Статистический анализ значимости результатов
+# Statistical analysis of the significance of the results
 significance = funnel.analyze_ab_test_significance(
     control_df=control_df,
     test_df=test_df,
@@ -369,35 +369,35 @@ significance = funnel.analyze_ab_test_significance(
     confidence_level=0.95
 )
 
-print(f"Конверсия в контрольной группе: {significance['control_conversion']}%")
-print(f"Конверсия в тестовой группе: {significance['test_conversion']}%")
-print(f"Относительное улучшение: {significance['relative_lift']}%")
-print(f"Статистическая значимость: {significance['is_significant']}")
+print(f"Conversion in the control group: {significance['control_conversion']}%")
+print(f"Conversion in test group: {significance['test_conversion']}%")
+print(f"Relative improvement: {significance['relative_lift']}%")
+print(f"Statistical significance: {significance['is_significant']}")
 
-# Сравнение воронок
+# Funnel comparison
 funnel.compare_funnels(
     dfs=[control_df, test_df],
-    labels=["Контроль", "Тест"],
-    title="Сравнение воронок A/B-теста"
+    labels=["Control", "Test"],
+    title="Comparison of funnels A/B-test"
 )
 ```
 
 
-## Работа с разными источниками данных
+## Working with different data sources
 
-Библиотека поддерживает работу с различными структурами данных:
+The library supports working with various data structures:
 
-### Стандартные таблицы событий:
+### Standard event tables:
 ```python
 funnel = BigQueryFunnel(
     project_id="your-project-id",
     dataset_id="your_dataset",
     table_id="your_table",
-    data_source="standard"  # по умолчанию
+    data_source="standard"  # default
 )
 ```
 
-### Таблицы Google Analytics 4 (GA4):
+### Google Analytics 4 Tables (GA4):
 ```python
 funnel = BigQueryFunnel(
     project_id="your-project-id",
@@ -407,10 +407,10 @@ funnel = BigQueryFunnel(
 )
 ```
 
-## Документация
+## Documentation
 
-Подробная документация доступна по адресу: [docs/](docs/)
+Detailed documentation is available at: [docs/](docs/)
 
-## Лицензия
+## License
 
 MIT

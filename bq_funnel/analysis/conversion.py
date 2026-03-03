@@ -1,5 +1,5 @@
 """
-Модуль для расчета коэффициентов конверсии между шагами воронки.
+Module for calculating conversion rates between funnel steps.
 """
 
 import pandas as pd
@@ -8,142 +8,142 @@ def calculate_conversion_rates(
     df: pd.DataFrame, 
     group_by: Optional[Union[str, List[str]]] = None,
     aggregation_type: str = "unique",
-    step_names: Optional[List[str]] = None  # Новый параметр для передачи названий шагов
+    step_names: Optional[List[str]] = None  # New option for passing step names
 ) -> pd.DataFrame:
     """
-    Рассчитывает коэффициенты конверсии между шагами воронки.
+    Calculates conversion rates between funnel steps.
     
     Args:
-        df: DataFrame с данными воронки, полученный из метода optimized_funnel
-        group_by: Столбец(цы) для группировки результатов (None для агрегированных результатов)
-        aggregation_type: Тип агрегации для подсчета конверсии ("unique" для уникальных пользователей,
-                         "total" для общего количества событий)
-        step_names: Список названий шагов воронки (опционально). Если не указан, 
-                   будет использован из столбцов e*_name, если они есть, 
-                   иначе будут использованы имена по умолчанию "Step 1", "Step 2" и т.д.
+        df: DataFrame with funnel data obtained from the optimized method_funnel
+        group_by: Column(s) for grouping results (None for aggregated results)
+        aggregation_type: Aggregation type for conversion calculation ("unique" for unique users,
+                         "total" for total number of events)
+        step_names: List of funnel step names (optional). If not specified,
+                   will be used from columns e*_name, if they exist,
+                   otherwise default names will be used "Step 1", "Step 2" etc.
         
     Returns:
-        DataFrame с добавленными столбцами коэффициентов конверсии и названиями шагов
+        DataFrame with added conversion rate columns and step names
     """
-    # Проверяем тип агрегации
+    # Checking the aggregation type
     if aggregation_type.lower() not in ["unique", "total"]:
-        raise ValueError("aggregation_type должен быть 'unique' или 'total'")
+        raise ValueError("aggregation_type must be 'unique' or 'total'")
     
-    # Используем уникальных пользователей или общее количество событий
+    # We use unique users or the total number of events
     count_unique = aggregation_type.lower() == "unique"
     
     if 'user_id' not in df.columns:
-        raise ValueError("Для расчета конверсии требуется столбец 'user_id'")
+        raise ValueError("A column is required to calculate conversion 'user_id'")
     
-    # Определяем столбцы с информацией о прохождении шагов
+    # Defining columns with information about the completion of steps
     if count_unique:
-        # При подсчете уникальных пользователей
+        # When counting unique users
         step_indicators = [col for col in df.columns if col.startswith('step') and '_users' in col]
         if not step_indicators:
             step_indicators = [col for col in df.columns if col.startswith('e') and '_name' in col]
     else:
-        # При подсчете общего количества событий
+        # When counting the total number of events
         step_indicators = [col for col in df.columns if col.startswith('step') and '_events' in col]
         if not step_indicators:
             step_indicators = [col for col in df.columns if col.startswith('e') and '_name' in col]
     
     if not step_indicators:
-        raise ValueError("Не найдены столбцы, указывающие на шаги воронки")
+        raise ValueError("Columns indicating funnel steps were not found")
     
-    # Сортировка столбцов по номеру шага
+    # Sort columns by step number
     step_indicators.sort(key=lambda x: int(''.join(filter(str.isdigit, x.split('_')[0]))))
     
-    # Проверяем, есть ли столбцы с названиями шагов
+    # Checking if there are columns with the names of steps
     name_columns = [col for col in df.columns if col.startswith('e') and '_name' in col]
     name_columns.sort(key=lambda x: int(''.join(filter(str.isdigit, x.split('_')[0]))))
     
-    # Определяем названия шагов
+    # Determining the names of the steps
     default_step_names = []
     
-    # Если названия шагов переданы как параметр, используем их
+    # If the names of the steps are passed as a parameter, use them
     if step_names is not None:
         default_step_names = step_names[:len(step_indicators)]
-    # Иначе, если есть столбцы e*_name, извлекаем названия из них
+    # Otherwise, if there are columns e*_name, extract names from them
     elif name_columns and not df.empty:
         for col in name_columns[:len(step_indicators)]:
-            # Берем первое непустое значение из столбца
+            # Take the first non-empty value from the column
             name = df[col].dropna().iloc[0] if not df[col].dropna().empty else f"Step {int(''.join(filter(str.isdigit, col.split('_')[0]))) + 1}"
             default_step_names.append(name)
     
-    # Если названия все еще не определены, используем значения по умолчанию
+    # If the names are still not defined, use the default values
     if not default_step_names:
         default_step_names = [f"Step {i+1}" for i in range(len(step_indicators))]
     
-    # Функция расчета конверсии для группы
+    # Conversion calculation function for a group
     def calculate_group_conversion(group_df):
         result = {}
         
-        # Проверяем, как определяются шаги (индикаторы или названия)
+        # We check how steps are defined (indicators or names)
         if ('_users' in step_indicators[0] and count_unique) or ('_events' in step_indicators[0] and not count_unique):
-            # Для воронок со специальными столбцами step1_users/step1_events
+            # For funnels with special columns step1_users/step1_events
             if count_unique:
-                # Считаем уникальных пользователей на каждом шаге
+                # We count unique users at every step
                 total_users = len(group_df['user_id'].unique())
                 result['total_users'] = total_users
                 
-                # Считаем пользователей на каждом шаге
+                # We count users at every step
                 for i, step in enumerate(step_indicators):
                     step_users = group_df[group_df[step] > 0]['user_id'].nunique()
                     result[f'step{i+1}_users'] = step_users
                 
-                # Используем step*_users для расчетов
+                # We use step*_users for calculations
                 step_columns = [f'step{i+1}_users' for i in range(len(step_indicators))]
             else:
-                # Считаем общее количество событий на каждом шаге
+                # We count the total number of events at each step
                 total_events = len(group_df)
                 result['total_events'] = total_events
                 
-                # Считаем события на каждом шаге
+                # We count events at every step
                 for i, step in enumerate(step_indicators):
-                    step_events = group_df[step].sum()  # Суммируем, так как может быть > 1 на пользователя
+                    step_events = group_df[step].sum()  # Let's sum it up, as it may be > 1 per user
                     result[f'step{i+1}_events'] = step_events
                 
-                # Используем step*_events для расчетов
+                # We use step*_events for calculations
                 step_columns = [f'step{i+1}_events' for i in range(len(step_indicators))]
             
-            # Добавляем названия шагов из определенного списка
+            # Adding names of steps from a specific list
             for i, name in enumerate(default_step_names[:len(step_indicators)]):
                 result[f'step{i+1}_name'] = name
                 
         else:
-            # Для воронок с событиями e0_name, e1_name и т.д.
+            # For funnels with events e0_name, e1_name etc.
             step_names = []
             for i, step in enumerate(step_indicators):
                 step_name = group_df[step].iloc[0] if not group_df.empty else default_step_names[i]
                 step_names.append(step_name)
                 
                 if count_unique:
-                    # Считаем уникальных пользователей на каждом шаге
+                    # We count unique users at every step
                     step_users = group_df[group_df[step].notna()]['user_id'].nunique()
                     result[f'step{i+1}_users'] = step_users
                 else:
-                    # Считаем общее количество событий на каждом шаге
+                    # We count the total number of events at each step
                     step_events = group_df[step].notna().sum()
                     result[f'step{i+1}_events'] = step_events
             
             if count_unique:
-                # Для подсчета уникальных пользователей
+                # To count unique users
                 total_users = len(group_df['user_id'].unique())
                 result['total_users'] = total_users
-                # Используем step*_users для расчетов
+                # We use step*_users for calculations
                 step_columns = [f'step{i+1}_users' for i in range(len(step_indicators))]
             else:
-                # Для подсчета общего количества событий
+                # To count the total number of events
                 total_events = len(group_df)
                 result['total_events'] = total_events
-                # Используем step*_events для расчетов
+                # We use step*_events for calculations
                 step_columns = [f'step{i+1}_events' for i in range(len(step_indicators))]
             
-            # Добавляем имена шагов
+            # Adding step names
             for i, name in enumerate(step_names):
                 result[f'step{i+1}_name'] = name
         
-        # Общая конверсия
+        # Total Conversion
         first_step = step_columns[0]
         last_step = step_columns[-1]
         
@@ -155,7 +155,7 @@ def calculate_conversion_rates(
         else:
             result['total_conversion'] = 0
         
-        # Конверсия между шагами
+        # Conversion between steps
         for i in range(1, len(step_indicators)):
             prev_step = step_columns[i-1]
             curr_step = step_columns[i]
@@ -170,47 +170,47 @@ def calculate_conversion_rates(
         
         return result
     
-    # Если группировка не указана, рассчитываем конверсию по всему DataFrame
+    # If the grouping is not specified, we calculate the conversion for the entire DataFrame
     if group_by is None:
         conversion_data = calculate_group_conversion(df)
         return pd.DataFrame([conversion_data])
     
-    # Если указана группировка, рассчитываем конверсию для каждой группы
+    # If a grouping is specified, we calculate the conversion for each group
     if isinstance(group_by, str):
         group_by = [group_by]
     
-    # Проверяем наличие столбцов группировки
+    # Checking for the presence of grouping columns
     missing_columns = [col for col in group_by if col not in df.columns]
     if missing_columns:
-        raise ValueError(f"Столбцы {missing_columns} не найдены в DataFrame")
+        raise ValueError(f"Columns {missing_columns} not found in DataFrame")
     
-    # Получаем уникальные комбинации значений группировки
+    # Getting unique combinations of grouping values
     group_combinations = df[group_by].drop_duplicates()
     
-    # Рассчитываем конверсию для каждой группы
+    # We calculate the conversion for each group
     results = []
     for _, group_values in group_combinations.iterrows():
-        # Формируем условие фильтрации для группы
+        # We create a filtering condition for the group
         group_filter = True
         for col in group_by:
             group_filter &= (df[col] == group_values[col])
         
-        # Получаем данные группы
+        # Getting group data
         group_df = df[group_filter]
         
-        # Рассчитываем конверсию для группы
+        # Calculating conversion for a group
         group_result = calculate_group_conversion(group_df)
         
-        # Добавляем значения группировки
+        # Adding grouping values
         for col in group_by:
             group_result[col] = group_values[col]
         
         results.append(group_result)
     
-    # Создаем DataFrame из результатов
+    # Create a DataFrame from the results
     result_df = pd.DataFrame(results)
     
-    # Переупорядочиваем столбцы для лучшей читаемости
+    # Rearranging columns for better readability
     if result_df.empty:
         return result_df
         
@@ -236,12 +236,12 @@ def calculate_conversion_rates(
     if 'total_conversion' in result_df.columns:
         columns_order.append('total_conversion')
     
-    # Оставляем только существующие столбцы и добавляем остальные в конец
+    # Keep only the existing columns and add the rest at the end
     existing_columns = [col for col in columns_order if col in result_df.columns]
     other_columns = [col for col in result_df.columns if col not in columns_order]
     final_columns = existing_columns + other_columns
     
-    # Сортируем результаты по группировке
+    # Sort the results by grouping
     result_df = result_df[final_columns].sort_values(by=group_by).reset_index(drop=True)
     
     return result_df

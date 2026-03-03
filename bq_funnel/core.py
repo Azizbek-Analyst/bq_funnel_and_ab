@@ -1,5 +1,5 @@
 """
-Основной модуль с классом BigQueryFunnel для анализа воронок.
+Main module with the BigQueryFunnel class for analyzing funnels.
 """
 
 from google.cloud import bigquery
@@ -11,7 +11,7 @@ from bq_funnel.query_builder import (
     build_funnel_query
 )
 
-# Импорт функций для работы с GA4
+# Importing functions for working with GA4
 from bq_funnel.query_builder_ga4 import (
     build_funnel_query_ga4
 )
@@ -25,21 +25,21 @@ from bq_funnel.visualization.comparison_plot import compare_funnels
 
 class BigQueryFunnel:
     """
-    Класс для получения и анализа данных воронки пользователя из BigQuery.
-    Позволяет анализировать последовательности событий пользователей с учетом временных окон,
-    группировать данные и применять различные фильтры.
+    Class for receiving and analyzing user funnel data from BigQuery.
+    Allows you to analyze sequences of user events taking into account time windows,
+    group data and apply various filters.
     """
     
     def __init__(self, project_id: str, dataset_id: str, table_id: str, client=None, data_source="standard"):
         """
-        Инициализация клиента BigQuery и настройка источника данных.
+        Initializing the BigQuery client and setting up the data source.
         
         Args:
-            project_id: ID проекта Google Cloud
-            dataset_id: ID набора данных BigQuery
-            table_id: ID таблицы с данными событий
-            client: Готовый авторизованный клиент BigQuery (необязательно)
-            data_source: Тип источника данных ("standard" или "ga4")
+            project_id: ID Google Cloud project
+            dataset_id: ID BigQuery dataset
+            table_id: ID tables with event data
+            client: Ready-made authorized BigQuery client (optional))
+            data_source: Data source type ("standard" or "ga4")
         """
         self.client = client if client else bigquery.Client(project=project_id)
         self.dataset_id = dataset_id
@@ -57,29 +57,29 @@ class BigQueryFunnel:
         timestamp_field: str = None
     ) -> pd.DataFrame:
         """
-        Получение данных воронки с оптимизированным запросом.
+        Retrieving funnel data with an optimized query.
         
         Args:
-            events: Список событий в воронке в порядке следования. 
-                   Каждый элемент может быть строкой с названием события или словарем 
-                   вида {'name': 'event_name', 'params': {'param1': 'value1', 'param2': 'value2'}}
-            date_range: Кортеж (начальная_дата, конечная_дата) в формате 'YYYY-MM-DD'
-            window: Временное окно для прохождения воронки (например, '8h', '24h', '7d')
-            group_by: Поле для группировки результатов
-            filters: Словарь фильтров в формате {поле: значение}, применяемых ко всем событиям
-            timestamp_field: Название поля с временной меткой (по умолчанию "timestamp" для standard или "event_timestamp" для GA4)
+            events: List of events in the funnel in order.
+                   Each element can be a string with an event name or a dictionary
+                   type {'name': 'event_name', 'params': {'param1': 'value1', 'param2': 'value2'}}
+            date_range: Tuple (initial_end date_date) in the format 'YYYY-MM-DD'
+            window: Time window for passing through the funnel (for example, '8h', '24h', '7d')
+            group_by: Field for grouping results
+            filters: Dictionary of filters in the format {field: value}, applicable to all events
+            timestamp_field: Field name with timestamp (default "timestamp" for standard or "event_timestamp" for GA4)
             
         Returns:
-            pandas.DataFrame с данными воронки
+            pandas.DataFrame with funnel data
         """
-        # Преобразование окна в секунды
+        # Convert window to seconds
         window_seconds = parse_time_window(window)
         
-        # Определение поля времени по умолчанию в зависимости от источника данных
+        # Define a default time field depending on the data source
         if timestamp_field is None:
             timestamp_field = "event_timestamp" if self.data_source == "ga4" else "timestamp"
         
-        # Формирование SQL запроса в зависимости от источника данных
+        # Generating an SQL query depending on the data source
         if self.data_source == "ga4":
             query = build_funnel_query_ga4(
                 events=events,
@@ -100,11 +100,11 @@ class BigQueryFunnel:
                 filters=filters
             )
         
-        # Выполнение запроса
+        # Executing the request
         query_job = self.client.query(query)
         results = query_job.result()
         
-        # Преобразование результатов в pandas DataFrame
+        # Converting results to pandas DataFrame
         df = results.to_dataframe()
         
 
@@ -119,23 +119,23 @@ class BigQueryFunnel:
         dry_run: bool = False
     ) -> pd.DataFrame:
         """
-        Выполняет произвольный SQL-запрос к BigQuery.
+        Executes a random SQL query against BigQuery.
         
         Args:
-            query: SQL-запрос для выполнения
-            params: Параметры запроса для подстановки (необязательно)
-            timeout: Время ожидания в секундах (необязательно)
-            dry_run: Если True, запрос не будет выполнен, но будет проверен и оценен
-                    (полезно для проверки синтаксиса и оценки стоимости)
+            query: SQL-request to execute
+            params: Query parameters for substitution (optional))
+            timeout: Timeout in seconds (optional))
+            dry_run: If True, the request will not be executed, but will be checked and evaluated
+                    (useful for syntax checking and cost estimation)
             
         Returns:
-            pandas.DataFrame с результатами запроса,
-            или объект QueryJob с информацией о запросе, если dry_run=True
+            pandas.DataFrame with query results,
+            or a QueryJob object with information about the request, if dry_run=True
         """
-        # Создание объекта параметров запроса
+        # Creating a Query Parameters Object
         job_config = bigquery.QueryJobConfig()
         
-        # Если указаны параметры, добавляем их в конфигурацию
+        # If the parameters are specified, add them to the configuration
         if params:
             job_config.query_parameters = [
                 bigquery.ScalarQueryParameter(name, 
@@ -144,22 +144,22 @@ class BigQueryFunnel:
                 for name in params
             ]
         
-        # Если указан флаг dry_run, устанавливаем его
+        # If the dry flag is specified_run, install it
         if dry_run:
             job_config.dry_run = True
         
-        # Выполнение запроса
+        # Executing the request
         query_job = self.client.query(
             query,
             job_config=job_config,
             timeout=timeout
         )
         
-        # Если dry_run=True, возвращаем информацию о запросе
+        # If dry_run=True, return information about the request
         if dry_run:
             return query_job
         
-        # Иначе получаем результаты и преобразуем в DataFrame
+        # Otherwise, we get the results and convert them to DataFrame
         results = query_job.result()
         df = results.to_dataframe()
         
@@ -167,13 +167,13 @@ class BigQueryFunnel:
     
     def _get_bigquery_param_type(self, value: Any) -> str:
         """
-        Определяет тип параметра BigQuery на основе типа Python.
+        Determines the type of a BigQuery parameter based on the Python type.
         
         Args:
-            value: Значение параметра
+            value: Parameter value
             
         Returns:
-            Строка с типом параметра BigQuery
+            String with BigQuery parameter type
         """
         if isinstance(value, bool):
             return 'BOOL'
@@ -192,7 +192,7 @@ class BigQueryFunnel:
         elif isinstance(value, (list, tuple)) and all(isinstance(x, float) for x in value):
             return 'ARRAY<FLOAT64>'
         else:
-            # Для других типов используем строковое представление
+            # For other types we use the string representation
             return 'STRING'
         
     def calculate_conversion_rates(
@@ -202,30 +202,30 @@ class BigQueryFunnel:
             aggregation_type: str = "unique"
         ) -> pd.DataFrame:
             """
-            Рассчитывает коэффициенты конверсии между шагами воронки.
+            Calculates conversion rates between funnel steps.
             
             Args:
-                df: DataFrame с данными воронки, полученный из метода optimized_funnel
-                group_by: Столбец(цы) для группировки результатов (None для агрегированных результатов)
-                aggregation_type: Тип агрегации для подсчета конверсии ("unique" для уникальных пользователей,
-                                "total" для общего количества событий)
+                df: DataFrame with funnel data obtained from the optimized method_funnel
+                group_by: Column(s) for grouping results (None for aggregated results)
+                aggregation_type: Aggregation type for conversion calculation ("unique" for unique users,
+                                "total" for total number of events)
                 
             Returns:
-                DataFrame с добавленными столбцами коэффициентов конверсии
+                DataFrame with added conversion rate columns
             """
             from bq_funnel.analysis.conversion import calculate_conversion_rates
             return calculate_conversion_rates(df, group_by, aggregation_type)
     
     def analyze_dropoffs(self, df: pd.DataFrame, total_users_col: str = 'total_users') -> pd.DataFrame:
         """
-        Анализирует отток пользователей между шагами воронки и определяет критические точки.
+        Analyzes user churn between funnel steps and identifies critical points.
         
         Args:
-            df: DataFrame с данными воронки
-            total_users_col: Название столбца с общим количеством пользователей
+            df: DataFrame with funnel data
+            total_users_col: Column name with total number of users
             
         Returns:
-            DataFrame с анализом оттока на каждом шаге
+            DataFrame with churn analysis at every step
         """
         return analyze_dropoffs(df, total_users_col)
     
@@ -238,17 +238,17 @@ class BigQueryFunnel:
         confidence_level: float = 0.95
     ) -> Dict[str, Union[float, bool, str]]:
         """
-        Проводит статистический анализ значимости различий между контрольной и тестовой группами.
+        Conducts statistical analysis of the significance of differences between the control and test groups.
         
         Args:
-            control_df: DataFrame с данными контрольной группы
-            test_df: DataFrame с данными тестовой группы
-            first_step: Название столбца с количеством пользователей на первом шаге
-            last_step: Название столбца с количеством пользователей на последнем шаге (по умолчанию последний доступный)
-            confidence_level: Уровень доверия для статистического теста (по умолчанию 0.95)
+            control_df: DataFrame with control group data
+            test_df: DataFrame with test group data
+            first_step: Name of the column with the number of users in the first step
+            last_step: The name of the column with the number of users in the last step (by default the last available)
+            confidence_level: Confidence level for statistical test (default 0.95)
             
         Returns:
-            Словарь с результатами статистического анализа
+            Dictionary with results of statistical analysis
         """
         return analyze_ab_test_significance(
             control_df=control_df,
@@ -258,24 +258,24 @@ class BigQueryFunnel:
             confidence_level=confidence_level
         )
     
-    def visualize_funnel(self, df: pd.DataFrame, title: str = "Воронка пользователей") -> None:
+    def visualize_funnel(self, df: pd.DataFrame, title: str = "User funnel") -> None:
         """
-        Визуализирует воронку на основе данных.
+        Visualizes the funnel based on data.
         
         Args:
-            df: DataFrame с данными воронки
-            title: Заголовок графика
+            df: DataFrame with funnel data
+            title: Graph title
         """
         visualize_funnel(df, title)
     
-    def compare_funnels(self, dfs: List[pd.DataFrame], labels: List[str], title: str = "Сравнение воронок") -> None:
+    def compare_funnels(self, dfs: List[pd.DataFrame], labels: List[str], title: str = "Funnel comparison") -> None:
         """
-        Сравнивает несколько воронок на одном графике.
+        Compares multiple funnels on one chart.
         
         Args:
-            dfs: Список DataFrames с данными воронок
-            labels: Список меток для каждой воронки
-            title: Заголовок графика
+            dfs: List of DataFrames with funnel data
+            labels: List of labels for each funnel
+            title: Graph title
         """
         compare_funnels(dfs, labels, title)
 
@@ -290,30 +290,30 @@ class BigQueryFunnel:
         timestamp_field: str = None
     ) -> Dict[str, pd.DataFrame]:
         """
-        Получение данных воронки с интеграцией AB-тестирования.
+        Receiving funnel data with AB testing integration.
         
         Args:
-            events: Список событий в воронке в порядке следования
-            date_range: Кортеж (начальная_дата, конечная_дата) в формате 'YYYY-MM-DD'
-            ab_test_config: Конфигурация AB-теста в формате:
+            events: List of events in the funnel in order
+            date_range: Tuple (initial_end date_date) in the format 'YYYY-MM-DD'
+            ab_test_config: AB test configuration in format:
                 {
                     'table_id': 'project.dataset.ab_tests_sessions',
-                    'test_code': 'TRAVELUAEAQ',  # Код теста для фильтрации
-                    'user_id_field': 'googleID'  # Поле с ID пользователя в таблице AB-тестов
+                    'test_code': 'TRAVELUAEAQ',  # Test code for filtering
+                    'user_id_field': 'googleID'  # User ID field in the AB tests table
                 }
-            window: Временное окно для прохождения воронки (например, '8h', '24h', '7d')
-            filters: Словарь фильтров в формате {поле: значение}, применяемых ко всем событиям
-            timestamp_field: Название поля с временной меткой
+            window: Time window for passing through the funnel (for example, '8h', '24h', '7d')
+            filters: Dictionary of filters in the format {field: value}, applicable to all events
+            timestamp_field: Field name with timestamp
                 
         Returns:
-            Словарь с данными воронки для контрольной и тестовой групп:
+            Dictionary with funnel data for control and test groups:
             {
-                'control': DataFrame контрольной группы,
-                'test': DataFrame тестовой группы,
-                'overall': DataFrame всех пользователей
+                'control': DataFrame control group,
+                'test': DataFrame test group,
+                'overall': DataFrame all users
             }
         """
-        # Построение запроса для получения данных AB-теста
+        # Building a query to obtain AB test data
         ab_test_query = f"""
         WITH ab_test_data AS (
         SELECT 
@@ -334,17 +334,17 @@ class BigQueryFunnel:
         SELECT * FROM ab_test_data
         """
         
-        # Получение данных AB-теста
+        # Retrieving AB Test Data
         ab_test_df = self.custom_query(ab_test_query)
         
-        # Преобразование окна в секунды
+        # Convert window to seconds
         window_seconds = parse_time_window(window)
         
-        # Определение поля времени по умолчанию в зависимости от источника данных
+        # Define a default time field depending on the data source
         if timestamp_field is None:
             timestamp_field = "event_timestamp" if self.data_source == "ga4" else "timestamp"
         
-        # Формирование базового SQL запроса для воронки
+        # Generating a basic SQL query for a funnel
         if self.data_source == "ga4":
             base_query_template = """
             WITH funnel_data AS (
@@ -372,13 +372,13 @@ class BigQueryFunnel:
             JOIN ab_test_data a ON f.user_id = a.user_id
             """
             
-            # Получаем базовый запрос воронки и интегрируем его в шаблон
+            # We get the basic funnel request and integrate it into the template
             base_funnel_query = build_funnel_query_ga4(
                 events=events,
                 date_range=date_range,
                 window_seconds=window_seconds,
                 table_id=self.full_table_id,
-                group_by=None,  # Не используем стандартную группировку
+                group_by=None,  # We do not use standard grouping
                 filters=filters,
                 timestamp_field=timestamp_field
             )
@@ -409,17 +409,17 @@ class BigQueryFunnel:
             JOIN ab_test_data a ON f.user_id = a.user_id
             """
             
-            # Получаем базовый запрос воронки и интегрируем его в шаблон
+            # We get the basic funnel request and integrate it into the template
             base_funnel_query = build_funnel_query(
                 events=events,
                 date_range=date_range,
                 window_seconds=window_seconds,
                 table_id=self.full_table_id,
-                group_by=None,  # Не используем стандартную группировку
+                group_by=None,  # We do not use standard grouping
                 filters=filters
             )
         
-        # Формирование итогового запроса с интеграцией AB-тестов
+        # Formation of the final request with the integration of AB tests
         final_query = base_query_template.format(
             base_funnel_query=base_funnel_query,
             user_id_field=ab_test_config['user_id_field'],
@@ -428,42 +428,42 @@ class BigQueryFunnel:
             start_date=date_range[0],
             end_date=date_range[1]
         ) 
-        # Выполнение запроса
+        # Executing the request
         result_df = self.custom_query(final_query)
         
         result = {}
     
-        # Проверяем, есть ли данные
+        # Checking if there is data
         if len(result_df) > 0:
-            # Получаем список идентификаторов пользователей и шагов воронки
+            # We get a list of user IDs and funnel steps
             user_id_col = 'user_id' if self.data_source == "ga4" else 'user_id'
             step_cols = [col for col in result_df.columns if col.endswith('_users') or col == 'total_users']
             
-            # Создаем пустой DataFrame для общих результатов
+            # Create an empty DataFrame for general results
             overall_data = {}
             
-            # Для каждого шага считаем уникальных пользователей
+            # For each step we count unique users
             for step_col in step_cols:
-                # Фильтруем пользователей, которые достигли этого шага
+                # Filtering users who have reached this step
                 step_users = result_df[result_df[step_col] > 0][user_id_col].nunique()
                 overall_data[step_col] = step_users
             
-            # Преобразуем в DataFrame
+            # Convert to DataFrame
             result['overall'] = pd.DataFrame([overall_data])
             
-            # Группируем по ab_group и считаем уникальных пользователей для каждой группы
+            # Group by ab_group and count unique users for each group
             for group_name, group_df in result_df.groupby('ab_group'):
                 group_data = {}
                 
-                # Для каждого шага в группе считаем уникальных пользователей
+                # For each step in the group we count unique users
                 for step_col in step_cols:
                     step_users = group_df[group_df[step_col] > 0][user_id_col].nunique()
                     group_data[step_col] = step_users
                 
-                # Преобразуем в DataFrame
+                # Convert to DataFrame
                 result[group_name] = pd.DataFrame([group_data])
         else:
-            # Если данных нет, возвращаем пустые DataFrame
+            # If there is no data, return empty DataFrame
             result = {
                 'control': pd.DataFrame(),
                 'test': pd.DataFrame(),
@@ -472,4 +472,4 @@ class BigQueryFunnel:
         
         return result
 
-# Добавить этот метод в класс BigQueryFunnel в core.py
+# Add this method to the BigQueryFunnel class in core.py

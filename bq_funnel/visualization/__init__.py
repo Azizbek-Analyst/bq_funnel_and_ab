@@ -1,5 +1,5 @@
 """
-Подпакет для визуализации данных воронки.
+Subpackage for funnel data visualization.
 """
 
 from bq_funnel.visualization.funnel_plot import visualize_funnel

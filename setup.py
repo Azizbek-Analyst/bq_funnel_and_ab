@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-with open("README.md", "r", encoding="utf-8") as fh:
+with open("readme.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
@@ -8,7 +8,7 @@ setup(
     version="0.1.0",
     author="Azizbek Abdrakhimov",
     author_email="azizbek.abdrakhimov@gmail.com",
-    description="Библиотека для анализа воронок пользователей в BigQuery",
+    description="Library for analyzing user funnels in BigQuery",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Azizbek-Analyst/bq_funnel_and_ab",
@@ -26,13 +26,13 @@ setup(
     python_requires=">=3.6",
     install_requires=[
         "google-cloud-bigquery>=2.0.0",
-        "google-cloud-bigquery-storage>=2.0.0",  # Добавлен для более быстрой загрузки данных
+        "google-cloud-bigquery-storage>=2.0.0",  # Added for faster data loading
         "pandas>=1.0.0",
         "numpy>=1.18.0",
         "matplotlib>=3.2.0",
         "seaborn>=0.10.0",
         "scipy>=1.4.0",
-        "pydata-google-auth>=1.0.0",  # Добавлен для интерактивной аутентификации
+        "pydata-google-auth>=1.0.0",  # Added for interactive authentication
          "pyarrow>=1.0.0",
     ],
     extras_require={

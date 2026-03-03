@@ -1,5 +1,5 @@
 """
-Модуль для статистического анализа A/B-тестов на основе данных воронки.
+Statistical Analysis Module A/B-tests based on funnel data.
 """
 
 import numpy as np
@@ -15,78 +15,78 @@ def analyze_ab_test_significance(
     confidence_level: float = 0.95
 ) -> Dict[str, Union[float, bool, str]]:
     """
-    Проводит статистический анализ значимости различий между контрольной и тестовой группами.
+    Conducts statistical analysis of the significance of differences between the control and test groups.
     
     Args:
-        control_df: DataFrame с данными контрольной группы
-        test_df: DataFrame с данными тестовой группы
-        first_step: Название столбца с количеством пользователей на первом шаге
-        last_step: Название столбца с количеством пользователей на последнем шаге (по умолчанию последний доступный)
-        confidence_level: Уровень доверия для статистического теста (по умолчанию 0.95)
+        control_df: DataFrame with control group data
+        test_df: DataFrame with test group data
+        first_step: Name of the column with the number of users in the first step
+        last_step: The name of the column with the number of users in the last step (by default the last available)
+        confidence_level: Confidence level for statistical test (default 0.95)
         
     Returns:
-        Словарь с результатами статистического анализа
+        Dictionary with results of statistical analysis
     """
     try:
         from scipy import stats
     except ImportError:
-        warnings.warn("Для статистического анализа требуется установить scipy.")
-        return {"error": "Для статистического анализа требуется установить scipy."}
+        warnings.warn("Statistical analysis requires scipy to be installed.")
+        return {"error": "Statistical analysis requires scipy to be installed."}
     
-    # Если последний шаг не указан, находим его автоматически
+    # If the last step is not specified, we find it automatically
     if last_step is None:
         step_columns = [col for col in control_df.columns if col.startswith('step') and col.endswith('_users')]
         step_columns.sort(key=lambda x: int(x.replace('step', '').replace('_users', '')))
         last_step = step_columns[-1]
     
-    # Извлечение данных о конверсии
+    # Extracting conversion data
     control_start = control_df[first_step].iloc[0]
     control_end = control_df[last_step].iloc[0]
     test_start = test_df[first_step].iloc[0]
     test_end = test_df[last_step].iloc[0]
     
-    # Расчет конверсии
+    # Conversion calculation
     control_conv_rate = control_end / control_start if control_start > 0 else 0
     test_conv_rate = test_end / test_start if test_start > 0 else 0
     
-    # Абсолютная разница в конверсии
+    # Absolute difference in conversion
     abs_diff = (test_conv_rate - control_conv_rate) * 100
     
-    # Относительное улучшение
+    # Relative improvement
     rel_lift = ((test_conv_rate / control_conv_rate) - 1) * 100 if control_conv_rate > 0 else 0
     
-    # Статистический тест (z-тест для пропорций)
+    # Statistical test (z-test for proportions)
     control_success = control_end
     control_total = control_start
     test_success = test_end
     test_total = test_start
     
-    # Расчет стандартной ошибки и z-значения
+    # Calculation of standard error and z-score
     p1 = control_success / control_total if control_total > 0 else 0
     p2 = test_success / test_total if test_total > 0 else 0
     p_pool = (control_success + test_success) / (control_total + test_total) if (control_total + test_total) > 0 else 0
     
     se = np.sqrt(p_pool * (1 - p_pool) * (1/control_total + 1/test_total)) if p_pool > 0 and p_pool < 1 else 0
     
-    # Избегаем деления на ноль
+    # Avoiding division by zero
     if se > 0:
         z_score = (p2 - p1) / se
-        p_value = 2 * (1 - stats.norm.cdf(abs(z_score)))  # Двусторонний тест
+        p_value = 2 * (1 - stats.norm.cdf(abs(z_score)))  # Two-sided test
     else:
         z_score = 0
         p_value = 1.0
     
-    # Определение значимости результата
+    # Determining the significance of the result
     alpha = 1 - confidence_level
     is_significant = p_value < alpha
     
-    # Формирование рекомендации
+    # Formation of recommendations
     if is_significant and rel_lift > 0:
-        recommendation = "Результаты теста показывают статистически значимое улучшение. Рекомендуется внедрить изменения."
+        recommendation = "The test results show a statistically significant improvement. It is recommended to implement changes."
     elif is_significant and rel_lift < 0:
-        recommendation = "Результаты теста показывают статистически значимое ухудшение. Рекомендуется отклонить изменения."
+        recommendation = "The test results show a statistically significant deterioration. It is recommended to reject the changes."
     else:
-        recommendation = "Результаты теста не показывают статистически значимых изменений. Рекомендуется продолжить эксперимент или рассмотреть другие варианты."
+        recommendation = "The test results show no statistically significant changes. It is recommended to continue the experiment or consider other options."
     
     return {
         'control_conversion': round(control_conv_rate * 100, 2),

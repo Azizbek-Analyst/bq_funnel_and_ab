@@ -1,5 +1,5 @@
 """
-Подпакет для анализа данных воронки.
+Subpackage for funnel data analysis.
 """
 
 from bq_funnel.analysis.conversion import calculate_conversion_rates

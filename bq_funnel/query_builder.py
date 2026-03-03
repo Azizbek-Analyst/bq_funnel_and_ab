@@ -1,5 +1,5 @@
 """
-Модуль для построения SQL-запросов к BigQuery для анализа воронок.
+Module for building SQL queries to BigQuery for funnel analysis.
 """
 
 from typing import List, Tuple, Dict, Optional, Union, Any
@@ -7,13 +7,13 @@ from typing import List, Tuple, Dict, Optional, Union, Any
 
 def parse_time_window(window: str) -> int:
     """
-    Преобразование строкового представления временного окна в секунды.
+    Converting a string representation of a time window to seconds.
     
     Args:
-        window: Строка с указанием временного окна (например, '8h', '24h', '7d')
+        window: A string indicating the time window (for example, '8h', '24h', '7d')
         
     Returns:
-        Количество секунд
+        Number of seconds
     """
     unit = window[-1].lower()
     value = int(window[:-1])
@@ -27,18 +27,18 @@ def parse_time_window(window: str) -> int:
     elif unit == 's':
         return value
     else:
-        raise ValueError(f"Неподдерживаемая единица времени: {unit}. Используйте 's', 'm', 'h' или 'd'.")
+        raise ValueError(f"Unsupported unit of time: {unit}. Use 's', 'm', 'h' or 'd'.")
 
 
 def build_filter_conditions(filters: Dict[str, Union[str, List[str]]]) -> str:
     """
-    Создание условий фильтрации для SQL запроса.
+    Creating filtering conditions for an SQL query.
     
     Args:
-        filters: Словарь фильтров в формате {поле: значение}
+        filters: Dictionary of filters in the format {field: value}
         
     Returns:
-        Строка с условиями WHERE для SQL запроса
+        Line with WHERE conditions for SQL query
     """
     conditions = []
     
@@ -54,13 +54,13 @@ def build_filter_conditions(filters: Dict[str, Union[str, List[str]]]) -> str:
 
 def normalize_event(event: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Нормализует представление события, преобразуя строку в словарь.
+    Normalizes the event representation by converting the string to a dictionary.
     
     Args:
-        event: Название события (строка) или словарь с параметрами
+        event: Event name (string) or dictionary with parameters
         
     Returns:
-        Нормализованный словарь события
+        Normalized event dictionary
     """
     if isinstance(event, str):
         return {'name': event, 'params': {}}
@@ -69,18 +69,18 @@ def normalize_event(event: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
             event['params'] = {}
         return event
     else:
-        raise ValueError("Событие должно быть строкой или словарем с ключом 'name'")
+        raise ValueError("Event must be a string or a dictionary with a key 'name'")
 
 
 def build_event_condition(event_dict: Dict[str, Any]) -> str:
     """
-    Создает условие SQL для события с учетом дополнительных параметров.
+    Creates an SQL condition for an event, taking into account additional parameters.
     
     Args:
-        event_dict: Словарь события с ключами 'name' и 'params'
+        event_dict: Event dictionary with keys 'name' And 'params'
         
     Returns:
-        SQL условие для фильтрации события
+        SQL condition for event filtering
     """
     conditions = [f"event_name = '{event_dict['name']}'"]
     
@@ -103,32 +103,32 @@ def build_funnel_query(
     filters: Optional[Dict[str, Union[str, List[str]]]] = None
 ) -> str:
     """
-    Формирование оптимизированного SQL запроса для анализа воронки.
+    Generating an optimized SQL query for funnel analysis.
     
     Args:
-        events: Список событий в воронке
-        date_range: Кортеж (начальная_дата, конечная_дата)
-        window_seconds: Временное окно в секундах
-        table_id: Полный идентификатор таблицы в формате "project.dataset.table"
-        group_by: Поле для группировки
-        filters: Словарь фильтров
+        events: List of events in the funnel
+        date_range: Tuple (initial_end date_date)
+        window_seconds: Time window in seconds
+        table_id: Full table identifier in the format "project.dataset.table"
+        group_by: Grouping field
+        filters: Filter Dictionary
         
     Returns:
-        SQL запрос для выполнения в BigQuery
+        SQL query to be executed in BigQuery
     """
     start_date, end_date = date_range
     
-    # Нормализация событий
+    # Normalization of events
     normalized_events = [normalize_event(event) for event in events]
     
-    # Создание общего CTE для базовой фильтрации
+    # Creating a common CTE for basic filtering
     base_filters = f"DATE(timestamp) BETWEEN '{start_date}' AND '{end_date}'"
     
     if filters:
         filter_conditions = build_filter_conditions(filters)
         base_filters = f"{base_filters} AND {filter_conditions}"
     
-    # Создание общего базового CTE
+    # Creating a Common Core CTE
     base_cte = f"""
     filtered_events AS (
         SELECT *
@@ -137,7 +137,7 @@ def build_funnel_query(
     )
     """
     
-    # Формирование подзапросов для каждого события в воронке
+    # Formation of subqueries for each event in the funnel
     event_ctes = []
     
     for i, event_dict in enumerate(normalized_events):
@@ -160,7 +160,7 @@ def build_funnel_query(
         
         event_ctes.append(event_cte)
     
-    # Объединение подзапросов в единый SQL запрос
+    # Combining subqueries into a single SQL query
     join_clauses = []
     select_clauses = ["e0.user_id"]
     
@@ -182,7 +182,7 @@ def build_funnel_query(
             
         join_clauses.append(f"LEFT JOIN {f'e{i}'} ON {join_condition}")
     
-    # Формирование итогового SQL запроса с оптимизированной структурой
+    # Generating the final SQL query with an optimized structure
     all_ctes = [base_cte] + event_ctes
     
     base_query = f"""
@@ -197,7 +197,7 @@ def build_funnel_query(
         {' '.join(join_clauses)}
     """
     
-    # Добавление группировки, если указан параметр group_by
+    # Adding a group if the group parameter is specified_by
     if group_by:
         group_columns = ['e0.group_value']
         base_query += f"\nGROUP BY {', '.join(group_columns)}"

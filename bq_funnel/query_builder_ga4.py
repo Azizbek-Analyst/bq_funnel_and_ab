@@ -1,5 +1,5 @@
 """
-Модуль для построения SQL-запросов к таблицам GA4 в BigQuery для анализа воронок.
+Module for building SQL queries to GA4 tables in BigQuery for funnel analysis.
 """
 
 from typing import List, Tuple, Dict, Optional, Union, Any
@@ -7,13 +7,13 @@ from typing import List, Tuple, Dict, Optional, Union, Any
 
 def parse_time_window(window: str) -> int:
     """
-    Преобразование строкового представления временного окна в секунды.
+    Converting a string representation of a time window to seconds.
     
     Args:
-        window: Строка с указанием временного окна (например, '8h', '24h', '7d')
+        window: A string indicating the time window (for example, '8h', '24h', '7d')
         
     Returns:
-        Количество секунд
+        Number of seconds
     """
     unit = window[-1].lower()
     value = int(window[:-1])
@@ -27,18 +27,18 @@ def parse_time_window(window: str) -> int:
     elif unit == 's':
         return value
     else:
-        raise ValueError(f"Неподдерживаемая единица времени: {unit}. Используйте 's', 'm', 'h' или 'd'.")
+        raise ValueError(f"Unsupported unit of time: {unit}. Use 's', 'm', 'h' or 'd'.")
 
 
 def build_filter_conditions(filters: Dict[str, Union[str, List[str]]]) -> str:
     """
-    Создание условий фильтрации для SQL запроса.
+    Creating filtering conditions for an SQL query.
     
     Args:
-        filters: Словарь фильтров в формате {поле: значение}
+        filters: Dictionary of filters in the format {field: value}
         
     Returns:
-        Строка с условиями WHERE для SQL запроса
+        Line with WHERE conditions for SQL query
     """
     conditions = []
     
@@ -54,13 +54,13 @@ def build_filter_conditions(filters: Dict[str, Union[str, List[str]]]) -> str:
 
 def normalize_event(event: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Нормализует представление события, преобразуя строку в словарь.
+    Normalizes the event representation by converting the string to a dictionary.
     
     Args:
-        event: Название события (строка) или словарь с параметрами
+        event: Event name (string) or dictionary with parameters
         
     Returns:
-        Нормализованный словарь события
+        Normalized event dictionary
     """
     if isinstance(event, str):
         return {'name': event, 'params': {}}
@@ -69,34 +69,34 @@ def normalize_event(event: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
             event['params'] = {}
         return event
     else:
-        raise ValueError("Событие должно быть строкой или словарем с ключом 'name'")
+        raise ValueError("Event must be a string or a dictionary with a key 'name'")
 
 
 def build_event_condition(event_dict: Dict[str, Any]) -> str:
     """
-    Создает условие SQL для события с учетом дополнительных параметров.
-    Поддерживает операторы сравнения, включая LIKE.
+    Creates an SQL condition for an event, taking into account additional parameters.
+    Supports comparison operators including LIKE.
     
     Args:
-        event_dict: Словарь события с ключами 'name' и 'params'
-            Значения в params могут включать операторы сравнения 
-            в начале строки (%value% для LIKE)
+        event_dict: Event dictionary with keys 'name' And 'params'
+            Params values ​​can include comparison operators
+            at the beginning of the line (%value% for LIKE)
         
     Returns:
-        SQL условие для фильтрации события
+        SQL condition for event filtering
     """
     conditions = [f"event_name = '{event_dict['name']}'"]
     
     for param, value in event_dict['params'].items():
         if isinstance(value, list):
-            # Обработка списков значений
+            # Processing Lists of Values
             placeholders = ', '.join([f"'{v}'" for v in value])
             conditions.append(f"{param} IN ({placeholders})")
         elif isinstance(value, str) and '%' in value:
-            # Обработка LIKE условий с %
+            # Handling LIKE conditions with %
             conditions.append(f"{param} LIKE '{value}'")
         else:
-            # Стандартное сравнение на равенство
+            # Standard comparison for equality
             conditions.append(f"{param} = '{value}'")
     
     return " AND ".join(conditions)
@@ -112,33 +112,33 @@ def build_funnel_query_ga4(
     timestamp_field: str = "event_timestamp"
 ) -> str:
     """
-    Формирование оптимизированного SQL запроса для анализа воронки в таблицах GA4.
+    Generating an optimized SQL query for funnel analysis in GA4 tables.
     
     Args:
-        events: Список событий в воронке
-        date_range: Кортеж (начальная_дата, конечная_дата)
-        window_seconds: Временное окно в секундах
-        table_id: Полный идентификатор таблицы в формате "project.dataset.table"
-        group_by: Поле для группировки
-        filters: Словарь фильтров
-        timestamp_field: Название поля с временной меткой (по умолчанию "event_timestamp" для GA4)
+        events: List of events in the funnel
+        date_range: Tuple (initial_end date_date)
+        window_seconds: Time window in seconds
+        table_id: Full table identifier in the format "project.dataset.table"
+        group_by: Grouping field
+        filters: Filter Dictionary
+        timestamp_field: Field name with timestamp (default "event_timestamp" for GA4)
         
     Returns:
-        SQL запрос для выполнения в BigQuery
+        SQL query to be executed in BigQuery
     """
     start_date, end_date = date_range
     
-    # Нормализация событий
+    # Normalization of events
     normalized_events = [normalize_event(event) for event in events]
     
-    # Для GA4 используем event_date вместо преобразования timestamp
+    # For GA4 we use event_date instead of timestamp conversion
     base_filters = f"event_date BETWEEN '{start_date}' AND '{end_date}'"
     
     if filters:
         filter_conditions = build_filter_conditions(filters)
         base_filters = f"{base_filters} AND {filter_conditions}"
     
-    # Создание общего базового CTE
+    # Creating a Common Core CTE
     base_cte = f"""
     filtered_events AS (
         SELECT *
@@ -147,7 +147,7 @@ def build_funnel_query_ga4(
     )
     """
     
-    # Формирование подзапросов для каждого события в воронке
+    # Formation of subqueries for each event in the funnel
     event_ctes = []
     
     for i, event_dict in enumerate(normalized_events):
@@ -157,7 +157,7 @@ def build_funnel_query_ga4(
         event_cte = f"""
         {event_alias} AS (
             SELECT
-                user_pseudo_id as user_id,  -- GA4 использует user_pseudo_id вместо user_id
+                user_pseudo_id as user_id,  -- GA4 uses user_pseudo_id instead of user_id
                 {timestamp_field} as {event_alias}_timestamp,
                 {f"{group_by} as group_value," if group_by else ""}
                 '{event_dict["name"]}' as {event_alias}_name
@@ -170,7 +170,7 @@ def build_funnel_query_ga4(
         
         event_ctes.append(event_cte)
     
-# Объединение подзапросов в единый SQL запрос
+# Combining subqueries into a single SQL query
     join_clauses = []
     select_clauses = ["e0.user_id"]
     
@@ -182,7 +182,7 @@ def build_funnel_query_ga4(
         select_clauses.append(f"e{i}.{f'e{i}_name'}")
     
     for i in range(1, len(normalized_events)):
-        # Используем TIMESTAMP_DIFF для более простого и понятного условия оконного периода
+        # Using TIMESTAMP_DIFF for a simpler and clearer window period condition
         time_condition = f"TIMESTAMP_DIFF(TIMESTAMP_MICROS(e{i}.{f'e{i}_timestamp'}), TIMESTAMP_MICROS(e{i-1}.{f'e{i-1}_timestamp'}), SECOND) <= {window_seconds}"
         
         join_condition = f"e{i}.user_id = e0.user_id AND e{i}.{f'e{i}_timestamp'} >= e{i-1}.{f'e{i-1}_timestamp'} AND {time_condition}"
@@ -192,10 +192,10 @@ def build_funnel_query_ga4(
             
         join_clauses.append(f"LEFT JOIN {f'e{i}'} ON {join_condition}")
     
-    # Формирование итогового SQL запроса с оптимизированной структурой
+    # Generating the final SQL query with an optimized structure
     all_ctes = [base_cte] + event_ctes
     
-    # Упрощаем подсчет пользователей на каждом шаге
+    # We simplify user counting at every step
     steps_count = []
     for i in range(len(normalized_events)):
         steps_count.append(f"COUNT(DISTINCT e{i}.user_id) as step{i+1}_users")
@@ -212,13 +212,13 @@ def build_funnel_query_ga4(
         {' '.join(join_clauses)}
     """
     
-    # Добавление группировки
+    # Adding a grouping
     if group_by:
         group_columns = ['e0.group_value']
         base_query += f"\nGROUP BY {', '.join(group_columns)}"
         base_query += f"\nORDER BY e0.group_value"
     else:
-        # Если нет группировки, добавляем GROUP BY ALL для получения общих результатов
+        # If there is no grouping, add GROUP BY ALL to get general results
         base_query += "\nGROUP BY ALL"
     
     return base_query

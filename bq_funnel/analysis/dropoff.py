@@ -1,5 +1,5 @@
 """
-Модуль для анализа оттока пользователей между шагами воронки.
+Module for analyzing user churn between funnel steps.
 """
 
 import pandas as pd
@@ -7,35 +7,35 @@ import pandas as pd
 
 def analyze_dropoffs(df: pd.DataFrame, total_users_col: str = 'total_users') -> pd.DataFrame:
     """
-    Анализирует отток пользователей между шагами воронки и определяет критические точки.
+    Analyzes user churn between funnel steps and identifies critical points.
     
     Args:
-        df: DataFrame с данными воронки
-        total_users_col: Название столбца с общим количеством пользователей
+        df: DataFrame with funnel data
+        total_users_col: Column name with total number of users
         
     Returns:
-        DataFrame с анализом оттока на каждом шаге
+        DataFrame with churn analysis at every step
     """
-    # Поиск столбцов с количеством пользователей на каждом шаге
+    # Finding columns with the number of users at each step
     step_columns = [col for col in df.columns if col.startswith('step') and col.endswith('_users')]
     step_columns.sort(key=lambda x: int(x.replace('step', '').replace('_users', '')))
     
-    # Создание нового DataFrame для анализа оттока
+    # Creating a New DataFrame for Churn Analysis
     dropoff_data = []
     
-    # Если есть несколько групп, обрабатываем каждую отдельно
+    # If there are several groups, we process each separately
     if 'group_value' in df.columns:
         group_values = df['group_value'].unique()
         for group in group_values:
             group_df = df[df['group_value'] == group]
             dropoff_data.extend(_calculate_dropoffs_for_df(group_df, step_columns, group))
     else:
-        # Обработка случая без группировки
+        # Processing a case without grouping
         dropoff_data.extend(_calculate_dropoffs_for_df(df, step_columns))
     
     dropoff_df = pd.DataFrame(dropoff_data)
     
-    # Определение критических точек (где отток наибольший) для каждой группы
+    # Determination of critical points (where outflow is greatest) for each group
     if not dropoff_df.empty:
         if 'group_value' in dropoff_df.columns:
             for group in dropoff_df['group_value'].unique():
@@ -55,19 +55,19 @@ def analyze_dropoffs(df: pd.DataFrame, total_users_col: str = 'total_users') -> 
 
 def _calculate_dropoffs_for_df(df: pd.DataFrame, step_columns: list, group_value=None) -> list:
     """
-    Вспомогательная функция для расчета оттока для одного DataFrame.
+    Helper function to calculate churn for one DataFrame.
     
     Args:
-        df: DataFrame с данными
-        step_columns: Список столбцов с количеством пользователей
-        group_value: Значение группы (если есть)
+        df: DataFrame with data
+        step_columns: List of columns with number of users
+        group_value: Group value (if any))
         
     Returns:
-        Список словарей с данными об оттоке
+        List of dictionaries with churn data
     """
     dropoff_data = []
     
-    # Общее количество пользователей, вошедших в воронку
+    # Total number of users entering the funnel
     initial_users = df[step_columns[0]].iloc[0]
     
     for i in range(len(step_columns) - 1):
@@ -77,18 +77,18 @@ def _calculate_dropoffs_for_df(df: pd.DataFrame, step_columns: list, group_value
         users_current = df[current_step].iloc[0]
         users_next = df[next_step].iloc[0]
         
-        # Количество отпавших пользователей
+        # Number of dropped users
         dropoff_count = users_current - users_next
         
-        # Процент отпавших от текущего шага
+        # Percentage of dropouts from the current step
         dropoff_percent = (dropoff_count / users_current * 100) if users_current > 0 else 0
         
-        # Процент отпавших от общего количества в начале воронки
+        # Percentage of dropouts from the total number at the beginning of the funnel
         dropoff_percent_total = (dropoff_count / initial_users * 100) if initial_users > 0 else 0
         
         data = {
-            'step_from': f"Шаг {i+1}",
-            'step_to': f"Шаг {i+2}",
+            'step_from': f"Step {i+1}",
+            'step_to': f"Step {i+2}",
             'users_before': users_current,
             'users_after': users_next,
             'dropoff_count': dropoff_count,
@@ -97,7 +97,7 @@ def _calculate_dropoffs_for_df(df: pd.DataFrame, step_columns: list, group_value
             'retention_percent': round(100 - dropoff_percent, 2)
         }
         
-        # Добавляем значение группы, если оно было передано
+        # Add the group value if it was passed
         if group_value is not None:
             data['group_value'] = group_value
             

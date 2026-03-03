@@ -1,5 +1,5 @@
 """
-BigQuery Funnel - библиотека для анализа воронок пользователей в BigQuery.
+BigQuery Funnel - library for analyzing user funnels in BigQuery.
 """
 
 __version__ = "0.1.0"

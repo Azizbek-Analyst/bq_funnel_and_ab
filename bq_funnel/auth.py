@@ -1,5 +1,5 @@
 """
-Модуль для настройки авторизации в Google Cloud и создания клиента BigQuery.
+Module for setting up authorization in Google Cloud and creating a BigQuery client.
 """
 
 import os
@@ -10,24 +10,24 @@ import warnings
 
 def setup_bigquery_client(credentials_path=None, use_pydata_auth=False, scopes=None, project_id=None):
     """
-    Настраивает клиент BigQuery с авторизацией.
+    Sets up a BigQuery client with authorization.
     
     Args:
-        credentials_path: Путь к файлу учетных данных сервисного аккаунта (JSON).
-                         Если None, попытается использовать переменную окружения GOOGLE_APPLICATION_CREDENTIALS.
-        use_pydata_auth: Использовать интерактивную аутентификацию через pydata_google_auth.
-        scopes: Список необходимых разрешений для pydata_google_auth.
-        project_id: ID проекта Google Cloud (при использовании pydata_google_auth).
+        credentials_path: Path to the service account credentials file (JSON).
+                         If None, will try to use the GOOGLE environment variable_APPLICATION_CREDENTIALS.
+        use_pydata_auth: Use interactive authentication via pydata_google_auth.
+        scopes: List of required permissions for pydata_google_auth.
+        project_id: ID Google Cloud project (using pydata_google_auth).
     
     Returns:
-        Авторизованный клиент BigQuery
+        Authorized BigQuery client
     """
-    # Вариант 1: Используем pydata_google_auth для интерактивной аутентификации
+    # Option 1: Use pydata_google_auth for interactive authentication
     if use_pydata_auth:
         try:
             import pydata_google_auth
             
-            # Если списка разрешений нет, используем стандартные для BigQuery
+            # If there is no list of permissions, we use the standard ones for BigQuery
             if scopes is None:
                 scopes = [
                     'https://www.googleapis.com/auth/bigquery',
@@ -35,118 +35,118 @@ def setup_bigquery_client(credentials_path=None, use_pydata_auth=False, scopes=N
                     'https://www.googleapis.com/auth/drive'
                 ]
             
-            print(f"Запуск интерактивной аутентификации через pydata_google_auth...")
+            print(f"Running interactive authentication via pydata_google_auth...")
             
-            # Получаем учетные данные через pydata_google_auth
+            # Getting credentials via pydata_google_auth
             credentials = pydata_google_auth.get_user_credentials(
                 scopes,
-                auth_local_webserver=True,  # Использовать локальный веб-сервер для аутентификации
-                client_id=None,             # Использовать клиент по умолчанию
-                client_secret=None,         # Использовать клиент по умолчанию
+                auth_local_webserver=True,  # Use local web server for authentication
+                client_id=None,             # Use default client
+                client_secret=None,         # Use default client
             )
             
-            # Создаем клиент с полученными учетными данными
+            # Create a client with the received credentials
             client = bigquery.Client(credentials=credentials, project=project_id)
-            print(f"Аутентификация успешно завершена через pydata_google_auth")
+            print(f"Authentication completed successfully via pydata_google_auth")
             
-            # Сохраняем информацию о текущем проекте
+            # We save information about the current project
             if project_id:
-                print(f"Используется проект: {project_id}")
+                print(f"Project used: {project_id}")
             else:
                 project_id = client.project
-                print(f"Используется проект по умолчанию: {project_id}")
+                print(f"The default project is used: {project_id}")
                 
             return client
             
         except ImportError:
-            warnings.warn("Библиотека pydata_google_auth не установлена. "
-                          "Выполните 'pip install pydata-google-auth' для интерактивной аутентификации.")
-            print("Продолжение с использованием стандартных методов аутентификации...")
+            warnings.warn("pydata library_google_auth not installed. "
+                          "Execute 'pip install pydata-google-auth' for interactive authentication.")
+            print("Continue using standard authentication methods...")
         except Exception as e:
-            warnings.warn(f"Ошибка при аутентификации через pydata_google_auth: {e}")
-            print("Продолжение с использованием стандартных методов аутентификации...")
+            warnings.warn(f"Error authenticating via pydata_google_auth: {e}")
+            print("Continue using standard authentication methods...")
     
-    # Вариант 2: Используем указанный файл учетных данных
+    # Option 2: Use the specified credentials file
     if credentials_path:
         try:
             credentials = service_account.Credentials.from_service_account_file(credentials_path)
             client = bigquery.Client(credentials=credentials, project=project_id)
-            print(f"Авторизация с использованием учетных данных из файла: {credentials_path}")
+            print(f"Authorization using credentials from file: {credentials_path}")
             return client
         except Exception as e:
-            warnings.warn(f"Ошибка при загрузке учетных данных из файла: {e}")
-            print("Продолжение с использованием других методов аутентификации...")
+            warnings.warn(f"Error loading credentials from file: {e}")
+            print("Continue with other authentication methods...")
     
-    # Вариант 3: Используем переменную окружения GOOGLE_APPLICATION_CREDENTIALS
+    # Option 3: Use the GOOGLE environment variable_APPLICATION_CREDENTIALS
     if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS'):
         try:
             client = bigquery.Client(project=project_id)
-            print(f"Авторизация с использованием GOOGLE_APPLICATION_CREDENTIALS: {os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')}")
+            print(f"Authorization using GOOGLE_APPLICATION_CREDENTIALS: {os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')}")
             return client
         except Exception as e:
-            warnings.warn(f"Ошибка при использовании GOOGLE_APPLICATION_CREDENTIALS: {e}")
-            print("Продолжение с использованием других методов аутентификации...")
+            warnings.warn(f"Error using GOOGLE_APPLICATION_CREDENTIALS: {e}")
+            print("Continue with other authentication methods...")
     
-    # Вариант 4: Используем метаданные GCP, если код запущен внутри GCP
+    # Option 4: Use GCP metadata if the code is running inside GCP
     try:
         client = bigquery.Client(project=project_id)
-        print("Авторизация с использованием метаданных GCP (запуск внутри GCP)")
+        print("Authorization using GCP metadata (running inside GCP)")
         return client
     except Exception as e:
-        # Если все методы аутентификации не сработали, выбрасываем исключение
+        # If all authentication methods fail, throw an exception
         raise ValueError(
-            "Не удалось авторизоваться в Google Cloud. Пожалуйста, выполните одно из следующих действий:\n"
-            "1. Установите pydata-google-auth и используйте интерактивную аутентификацию: pip install pydata-google-auth\n"
-            "2. Предоставьте путь к файлу учетных данных сервисного аккаунта\n"
-            "3. Установите переменную окружения GOOGLE_APPLICATION_CREDENTIALS\n"
-            "4. Убедитесь, что код запущен внутри GCP с соответствующими разрешениями\n"
-            f"Подробности ошибки: {e}"
+            "Failed to login to Google Cloud. Please do one of the following:\n"
+            "1. Install pydata-google-auth and use interactive authentication: pip install pydata-google-auth\n"
+            "2. Provide the path to the service account credentials file\n"
+            "3. Set the GOOGLE environment variable_APPLICATION_CREDENTIALS\n"
+            "4. Make sure the code is running inside GCP with the appropriate permissions\n"
+            f"Error details: {e}"
         ) from e
 
 
 def authenticate_via_pydata(scopes=None, project_id=None):
     """
-    Выполняет интерактивную аутентификацию через pydata_google_auth.
+    Performs interactive authentication via pydata_google_auth.
     
     Args:
-        scopes: Список необходимых разрешений.
-        project_id: ID проекта Google Cloud.
+        scopes: List of required permissions.
+        project_id: ID Google Cloud project.
     
     Returns:
-        Авторизованный клиент BigQuery
+        Authorized BigQuery client
     """
     return setup_bigquery_client(use_pydata_auth=True, scopes=scopes, project_id=project_id)
 
 
 def authenticate_with_service_account(credentials_path, project_id=None):
     """
-    Выполняет аутентификацию с использованием файла ключа сервисного аккаунта.
+    Performs authentication using the service account key file.
     
     Args:
-        credentials_path: Путь к файлу учетных данных сервисного аккаунта.
-        project_id: ID проекта Google Cloud (необязательно).
+        credentials_path: Path to the service account credentials file.
+        project_id: ID Google Cloud project (optional)).
         
     Returns:
-        Авторизованный клиент BigQuery
+        Authorized BigQuery client
     """
     return setup_bigquery_client(credentials_path=credentials_path, project_id=project_id)
 
 def check_connection(client: bigquery.Client) -> bool:
     """
-    Проверяет соединение с BigQuery, выполняя простой запрос.
+    Tests connection to BigQuery by running a simple query.
     
     Args:
-        client: Клиент BigQuery
+        client: BigQuery client
         
     Returns:
-        True, если соединение установлено успешно, иначе False
+        True, if the connection is successful, otherwise False
     """
     try:
-        # Выполнение простого запроса для проверки соединения
+        # Running a simple query to test the connection
         query = "SELECT 1"
         query_job = client.query(query)
         result = list(query_job.result())
         return len(result) > 0
     except Exception as e:
-        print(f"Ошибка соединения с BigQuery: {str(e)}")
+        print(f"Error connecting to BigQuery: {str(e)}")
         return False
